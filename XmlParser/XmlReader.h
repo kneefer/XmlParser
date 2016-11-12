@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <stack>
 #include <vector>
 #include "windows.h"
 #include "Error.h"
@@ -51,6 +52,6 @@ private:
 	std::string     m_strParentNode;
 	std::size_t     m_nLineNum;
 	bool            m_bDocOpen;
-	//TODO
-	//LinkedStack<std::string> m_lsstrChildNodeName;
+
+	std::stack<std::string> m_lsstrChildNodeName;
 };

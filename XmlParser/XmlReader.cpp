@@ -12,8 +12,7 @@ bool XmlReader::load(std::string strFileName)
 	if (!exists(strFileName)) {
 		Error::ThrowError2(ErrorCode::FileExistError);
 		return false;
-	}
-	else {
+	} else {
 		m_ifsInFile.open(strFileName, std::ios::in);
 	}
 	m_bDocOpen = isOpen();
@@ -61,6 +60,7 @@ XmlReader::node XmlReader::getElementByTagName(std::string strTagName)
 	int posLAtr = 0;
 	int posLastAtr = 0;
 	m_strParentNode = strTagName;
+
 	while (std::getline(m_ifsInFile, strInLine, '\n')) {
 		parentNode.strAttributeName._Pop_back_n(parentNode.strAttributeName.size());
 		parentNode.strAttributeValue._Pop_back_n(parentNode.strAttributeValue.size());
@@ -107,8 +107,7 @@ XmlReader::node XmlReader::getElementByTagName(std::string strTagName)
 					getInnerText(strInLine, strInnerText);
 					parentNode.strInnerText = strInnerText;
 
-				}
-				else {
+				} else {
 					childNode = getChildNodes();
 					parentNode.childNode.push_back(childNode);
 				}
@@ -154,21 +153,19 @@ XmlReader::cNode XmlReader::getChildNodes()
 
 			if (posS < posL && posS > posF) {
 				strTagName = strInLine.substr(posF + 1, posS - posF - 1);
-			}
-			else {
+			} else {
 				strTagName = strInLine.substr(posF + 1, posL - posF - 1);
 			}
 
 			if (strTagName.substr(0, 1) == "/") {
 				strTagName.erase(0, 1);
 			}
-			//TODO
-			//m_lsstrChildNodeName.push(strTagName);
+
+			m_lsstrChildNodeName.push(strTagName);
 			posF = strInLine.find_last_of("<");
 			posL = strInLine.find_last_of(">");
 
-			//TODO
-			if (strInLine.substr(posF + 1, posL - posF - 1) != "/" /* + m_lsstrChildNodeName.top() */) {
+			if (strInLine.substr(posF + 1, posL - posF - 1) != "/" + m_lsstrChildNodeName.top()) {
 				childNode.strAttributeName._Pop_back_n(childNode.strAttributeName.size());
 				childNode.strAttributeValue._Pop_back_n(childNode.strAttributeValue.size());
 
@@ -196,23 +193,18 @@ XmlReader::cNode XmlReader::getChildNodes()
 					if (strEndTag == "/" + strTagName) {
 						getInnerText(strInLine, strInnerText);
 						childNode.strInnerText = strInnerText;
-					}
-					else {
+					} else {
 						tmpNode = getChildNodes();
 						childNode.childNode.push_back(tmpNode);
 					}
-				}
-				else {
-					//TODO
-					//m_lsstrChildNodeName.pop();
+				} else {
+					m_lsstrChildNodeName.pop();
 					endTag = true;
 				}
-			}
-			else {
+			} else {
 				getInnerText(strInLine, strInnerText);
 				childNode.strInnerText = strInnerText;
-				//TODO
-				//m_lsstrChildNodeName.pop();
+				m_lsstrChildNodeName.pop();
 				endTag = true;
 			}
 		}
