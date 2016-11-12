@@ -1,20 +1,23 @@
 #pragma once
 
-enum class ErrorCode
-{
-	None,
-	StreamError,
-	FileExistError,
-	ElementCloseError,
-	ElementTagsNotEmpty
-};
+namespace Xml {
 
-class Error 
-{
-public:
-	Error();
-	void ThrowError2(ErrorCode errorCode);
-private:
-	ErrorCode err;
-	const char* errMsg;
-};
+	enum class ErrorCode
+	{
+		None,
+		StreamError,
+		FileExistError,
+		ElementCloseError,
+		ElementTagsNotEmpty
+	};
+
+	class Error
+	{
+	public:
+		Error();
+		void ThrowError(ErrorCode errorCode);
+	private:
+		ErrorCode err;
+		const char* errMsg;
+	};
+}

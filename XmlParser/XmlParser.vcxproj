@@ -150,6 +150,17 @@
     <ClInclude Include="Error.h" />
     <ClInclude Include="XmlReader.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Test.xml">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+    </Xml>
+  </ItemGroup>
+	<ItemGroup>
+		<Content Include="Test.xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

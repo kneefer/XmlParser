@@ -9,49 +9,55 @@
 #include "Error.h"
 #include "atlstr.h"
 
-class XmlReader : private Error 
-{
-public:
-	struct cNode {
-		std::vector<cNode> childNode;
-		std::string strInnerText;
-		std::vector<std::string> strAttributeName;
-		std::vector<std::string> strAttributeValue;
-		bool hasChildNode();
+using namespace std;
+
+namespace Xml {
+
+	class XmlReader : private Error 
+	{
+	public:
+		struct cNode {
+			vector<cNode> childNodes;
+			string strInnerText;
+			vector<string> strAttributeNames;
+			vector<string> strAttributeValues;
+			bool haschildNodes();
+		};
+		struct pNode {
+			vector<cNode> childNodes;
+			string strInnerText;
+			vector<string> strAttributeNames;
+			vector<string> strAttributeValues;
+			bool haschildNodes();
+		};
+
+		struct node {
+			vector<pNode> parentNode;
+			string strInnerText;
+			vector<string> strAttributeNames;
+			vector<string> strAttributeValues;
+		};
+
+		XmlReader();
+		bool load(string strFileName);
+		void close();
+		XmlReader::node getElementByTagName(string strTagName);
+
+	private:
+		bool exists(string strFileName);
+		bool isOpen();
+		XmlReader::cNode getchildNodess();
+		void getAttributes(string& strOpenTag, string& strAttName, string& strAttValue);
+		void getInnerText(string& strInLine, string& strInnerText);
+
+		ifstream& goToLine(ifstream& file, int lineNUm);
+
+		ifstream   m_ifsInFile;
+		string     m_strParentNode;
+		size_t     m_nLineNum;
+		bool            m_bDocOpen;
+
+		stack<string> m_lsstrchildNodesName;
 	};
-	struct pNode {
-		std::vector<cNode> childNode;
-		std::string strInnerText;
-		std::vector<std::string> strAttributeName;
-		std::vector<std::string> strAttributeValue;
-		bool hasChildNode();
-	};
 
-	struct node {
-		std::vector<pNode> parentNode;
-		std::string strInnerText;
-		std::vector<std::string> strAttributeName;
-		std::vector<std::string> strAttributeValue;
-	};
-
-	XmlReader();
-	bool load(std::string strFileName);
-	void close();
-	XmlReader::node getElementByTagName(std::string strTagName);
-
-private:
-	bool exists(std::string strFileName);
-	bool isOpen();
-	XmlReader::cNode getChildNodes();
-	void getAttributes(std::string& strOpenTag, std::string& strAttName, std::string& strAttValue);
-	void getInnerText(std::string& strInLine, std::string& strInnerText);
-
-	std::ifstream& goToLine(std::ifstream& file, int lineNUm);
-
-	std::ifstream   m_ifsInFile;
-	std::string     m_strParentNode;
-	std::size_t     m_nLineNum;
-	bool            m_bDocOpen;
-
-	std::stack<std::string> m_lsstrChildNodeName;
-};
+}
