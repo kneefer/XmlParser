@@ -67,55 +67,56 @@ namespace Xml {
 			parentNode.strAttributeNames._Pop_back_n(parentNode.strAttributeNames.size());
 			parentNode.strAttributeValues._Pop_back_n(parentNode.strAttributeValues.size());
 			m_nLineNum = m_ifsInFile.tellg();
-			if (strInLine != "") {
 
-				if (strInLine[0] == '\t') {
-					vector<int> tabPos;
-					for (int i = 0; i < strInLine.size(); i++) {
-						if (strInLine[i] == '\t') {
-							tabPos.push_back(i);
-						}
-					}
-					for (int i = tabPos.size(); i > 0; i--) {
-						strInLine.erase(tabPos[i - 1], 1);
-						tabPos.pop_back();
+			if (strInLine == "")
+				continue;
+
+			if (strInLine[0] == '\t') {
+				vector<int> tabPos;
+				for (int i = 0; i < strInLine.size(); i++) {
+					if (strInLine[i] == '\t') {
+						tabPos.push_back(i);
 					}
 				}
-
-				if (strInLine.substr(1, sz) == strTagName) {
-
-					posLt = strInLine.find_last_of("<");
-					posGt = strInLine.find_last_of(">");
-
-					strTmp = strInLine.substr(posLt + 1, posGt - posLt - 1);
-
-					if (strTmp == "/" + strTagName) {
-
-						posLt = strInLine.find_first_of("<");
-						posGt = strInLine.find_first_of(">");
-
-						strOpenTag = strInLine.substr(posLt + 1, posGt - posLt - 1);
-
-						if (strOpenTag.size() > sz) {
-
-							while (strOpenTag.size() > sz) {
-
-								getAttributes(strOpenTag, strAttributeNames, strAttributeValues);
-								parentNode.strAttributeNames.push_back(strAttributeNames);
-								parentNode.strAttributeValues.push_back(strAttributeValues);
-
-							}
-						}
-						getInnerText(strInLine, strInnerText);
-						parentNode.strInnerText = strInnerText;
-
-					} else {
-						childNode = getchildNodess();
-						parentNode.childNodes.push_back(childNode);
-					}
-
-					node.parentNode.push_back(parentNode);
+				for (int i = tabPos.size(); i > 0; i--) {
+					strInLine.erase(tabPos[i - 1], 1);
+					tabPos.pop_back();
 				}
+			}
+
+			if (strInLine.substr(1, sz) == strTagName) {
+
+				posLt = strInLine.find_last_of("<");
+				posGt = strInLine.find_last_of(">");
+
+				strTmp = strInLine.substr(posLt + 1, posGt - posLt - 1);
+
+				if (strTmp == "/" + strTagName) {
+
+					posLt = strInLine.find_first_of("<");
+					posGt = strInLine.find_first_of(">");
+
+					strOpenTag = strInLine.substr(posLt + 1, posGt - posLt - 1);
+
+					if (strOpenTag.size() > sz) {
+
+						while (strOpenTag.size() > sz) {
+
+							getAttributes(strOpenTag, strAttributeNames, strAttributeValues);
+							parentNode.strAttributeNames.push_back(strAttributeNames);
+							parentNode.strAttributeValues.push_back(strAttributeValues);
+
+						}
+					}
+					getInnerText(strInLine, strInnerText);
+					parentNode.strInnerText = strInnerText;
+
+				} else {
+					childNode = getchildNodess();
+					parentNode.childNodes.push_back(childNode);
+				}
+
+				node.parentNode.push_back(parentNode);
 			}
 		}
 		return node;

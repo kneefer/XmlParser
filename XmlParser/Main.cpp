@@ -4,13 +4,12 @@ using namespace Xml;
 
 int main() {
 
-	XmlReader xmlR;
+	XmlReader xmlReader;
 
-	if (xmlR.load("Test.xml")) {
+	if (xmlReader.load("Test.xml")) {
 
-		XmlReader::node xmlNode;
-		xmlNode = xmlR.getElementByTagName("catalog");
+		auto nodes = xmlReader.getNodes();
+
 		cin.get();
-		//std::cout << xmlNode.parentNode[0]
 	}
 }
