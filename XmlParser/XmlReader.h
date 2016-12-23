@@ -8,6 +8,7 @@
 #include <mutex>
 #include <memory>
 #include <regex>
+#include <sstream> 
 #include <algorithm> 
 #include "windows.h"
 #include "atlstr.h"
@@ -87,11 +88,9 @@ namespace Xml {
 		vector<shared_ptr<Node>> _nodes;
 
 		char _currentChar;
-		State _state;
 	public:
 		XmlReader() {
 			_nodes = vector<shared_ptr<Node>>();
-			_state = S_Outside;
 		}
 
 		vector<shared_ptr<Node>>& getNodes() { return _nodes; }
@@ -121,17 +120,18 @@ namespace Xml {
 
 			string currentTagName;
 			vector<Attribute> currentAttributes;
+			State state = State::S_Outside;
 
 			while (fileStreamInputFile.get(_currentChar)) {
-				switch (_state) {
-				case S_Outside:    processStateOutside();
+				switch (state) {
+				case S_Outside:    processStateOutside(state);
 					break;
-				case S_TagName:    processStateTagName(currentTagName);
+				case S_TagName:    processStateTagName(state, currentTagName);
 					break;
-				case S_Attribute:  while (processStateAttribute(currentAttributes));
+				case S_Attribute:  while (processStateAttribute(state, currentAttributes));
 					break;
 				case S_TagContent: {
-					auto node = processStateTagContent(currentTagName, currentAttributes);
+					auto node = processStateTagContent(state, currentTagName, currentAttributes);
 					toReturn.push_back(node);
 					break;
 				} }
@@ -140,15 +140,15 @@ namespace Xml {
 			return toReturn;
 		}
 
-		void processStateOutside() {
+		void processStateOutside(State& state) {
 
 			if (_currentChar != TOKEN_TAG_OPEN)
 				return;
 
-			_state = S_TagName;
+			state = S_TagName;
 		}
 
-		void processStateTagName(string& currentTagName) {
+		void processStateTagName(State& state, string& currentTagName) {
 
 			if (!isalpha(_currentChar))
 				throw "Expected correct first character of tag name. Given: " + _currentChar;
@@ -160,9 +160,9 @@ namespace Xml {
 				}
 				
 				if (isspace(_currentChar)) {
-					_state = S_Attribute;
+					state = S_Attribute;
 				} else if (_currentChar == TOKEN_TAG_CLOSE) {
-					_state = S_TagContent;
+					state = S_TagContent;
 				} else {
 					throw "Invalid character in tag name: " + _currentChar;
 				}
@@ -170,7 +170,7 @@ namespace Xml {
 			}
 		}
 
-		bool processStateAttribute(vector<Attribute>& attributes) {
+		bool processStateAttribute(State& state, vector<Attribute>& attributes) {
 
 			string attributeName;
 			string attributeValue;
@@ -178,7 +178,7 @@ namespace Xml {
 			skipSpaces();
 
 			if (_currentChar == TOKEN_TAG_CLOSE) {
-				_state = S_TagContent;
+				state = S_TagContent;
 				return false;
 			}
 
@@ -224,6 +224,7 @@ namespace Xml {
 		}
 
 		void skipSpaces(bool getAtTheBeginning = false) {
+
 			if (getAtTheBeginning)
 				fileStreamInputFile.get(_currentChar);
 
@@ -233,8 +234,34 @@ namespace Xml {
 			} while (fileStreamInputFile.get(_currentChar));
 		}
 
-		shared_ptr<Node>& processStateTagContent(string& tagName, vector<Attribute>& attributes) {
+		shared_ptr<Node>& processStateTagContent(State& state, string& tagName, vector<Attribute>& attributes) {
 
+			string plainContent;
+			auto currentFilePosition = fileStreamInputFile.tellg();
+
+			skipSpaces();
+			if (_currentChar == TOKEN_TAG_OPEN) // Embedded tags or closing tag 
+			{ 
+				auto innerNodes = parse();
+				return shared_ptr<Node>(new ParentNode(tagName, attributes, innerNodes));
+			} 
+			else // Plain string content
+			{ 
+				do {
+					if (_currentChar == TOKEN_TAG_OPEN) { // Closing tag
+						stringbuf buffer;
+						fileStreamInputFile.get(buffer, TOKEN_TAG_CLOSE);
+						if (buffer.str() != ("/" + tagName))
+							throw "Tag's content not properly enclosed";
+						state = State::S_Outside;
+						break;
+					}
+
+					plainContent.append(&_currentChar);
+				} while (fileStreamInputFile.get(_currentChar));
+
+				return shared_ptr<Node>(new LeafNode(tagName, attributes, plainContent));
+			}
 		}
 	};
 }
