@@ -38,13 +38,9 @@ namespace Xml {
 		XmlReader();
 
 		vector<shared_ptr<Node>>& getNodes();
-
 		bool load(string strFileName);
-
 		double run();
-
 		bool close();
-
 		void print();
 	};
 
