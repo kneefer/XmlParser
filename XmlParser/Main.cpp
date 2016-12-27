@@ -8,6 +8,8 @@ int main() {
 
 	if (xmlReader.load("Test.xml")) {
 
+		cout << "Duration: " << xmlReader.run() << " seconds" << endl;
+		xmlReader.close();
 		auto nodes = xmlReader.getNodes();
 
 		cin.get();

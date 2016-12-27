@@ -6,6 +6,7 @@
 #include <stack>
 #include <vector>
 #include <mutex>
+#include <chrono>
 #include <memory>
 #include <regex>
 #include <sstream> 
@@ -20,12 +21,16 @@
 
 using namespace std;
 
+using sys_clock = std::chrono::high_resolution_clock;
+using date_time = std::chrono::time_point<sys_clock>;
+
 namespace Xml {
 	enum State {
 		S_Outside,
 		S_TagName,
 		S_Attribute,
-		S_TagContent
+		S_TagContent,
+		S_ClosingException
 	};
 
 	struct Attribute {
@@ -57,6 +62,8 @@ namespace Xml {
 		vector<Attribute>& getAttributes() { return _attributes; }
 	};
 
+	Node::~Node() { }
+
 	class LeafNode : public Node {
 	private:
 		string _innerText;
@@ -65,6 +72,8 @@ namespace Xml {
 			: Node(name, attributes) {
 			_innerText = innerText;
 		}
+
+		~LeafNode() { }
 
 		string getInnerText() { return _innerText; }
 	};
@@ -78,6 +87,8 @@ namespace Xml {
 			_childNodes = childNodes;
 		}
 
+		~ParentNode() { }
+
 		vector<shared_ptr<Node>>& _getNodes() { return _childNodes; }
 	};
 
@@ -88,33 +99,8 @@ namespace Xml {
 		vector<shared_ptr<Node>> _nodes;
 
 		char _currentChar;
-	public:
-		XmlReader() {
-			_nodes = vector<shared_ptr<Node>>();
-		}
 
-		vector<shared_ptr<Node>>& getNodes() { return _nodes; }
-
-		bool load(string strFileName) {
-			if (!ifstream(strFileName)) {
-				throw "Not found '" + strFileName + "' file.";
-				return false;
-			}
-
-			fileStreamInputFile.open(strFileName, ios::in);
-			return fileStreamInputFile.is_open();
-		}
-
-		bool close() {
-			if (fileStreamInputFile.is_open()) {
-				fileStreamInputFile.close();
-				return true;
-			}
-
-			return false;
-		}
-
-		vector<shared_ptr<Node>>& parse() {
+		vector<shared_ptr<Node>> parse() {
 
 			vector<shared_ptr<Node>> toReturn;
 
@@ -130,11 +116,16 @@ namespace Xml {
 					break;
 				case S_Attribute:  while (processStateAttribute(state, currentAttributes));
 					break;
+				case S_ClosingException:
+					return toReturn;
 				case S_TagContent: {
 					auto node = processStateTagContent(state, currentTagName, currentAttributes);
+					currentAttributes.clear();
+					currentTagName.clear();
 					toReturn.push_back(node);
 					break;
-				} }
+				}
+				}
 			}
 
 			return toReturn;
@@ -145,29 +136,41 @@ namespace Xml {
 			if (_currentChar != TOKEN_TAG_OPEN)
 				return;
 
+			char tmpChar;
+			if (fileStreamInputFile.get(tmpChar)) {
+				if (tmpChar == '/') {
+					state = S_ClosingException;
+					fileStreamInputFile.unget();
+					return;
+				}
+				else {
+					fileStreamInputFile.unget();
+				}
+			}
+
 			state = S_TagName;
 		}
 
 		void processStateTagName(State& state, string& currentTagName) {
 
-			if (!isalpha(_currentChar))
+			if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':'))
 				throw "Expected correct first character of tag name. Given: " + _currentChar;
 
-			while (fileStreamInputFile.get(_currentChar)) {
-				if (isalnum(_currentChar)) {
-					currentTagName.append(&_currentChar);
-					continue;
-				}
-				
+			do {
 				if (isspace(_currentChar)) {
 					state = S_Attribute;
-				} else if (_currentChar == TOKEN_TAG_CLOSE) {
-					state = S_TagContent;
-				} else {
-					throw "Invalid character in tag name: " + _currentChar;
+					break;
 				}
-				break;
-			}
+
+				if (_currentChar == TOKEN_TAG_CLOSE) {
+					state = S_TagContent;
+					break;
+				}
+
+				currentTagName += _currentChar;
+				continue;
+
+			} while (fileStreamInputFile.get(_currentChar));
 		}
 
 		bool processStateAttribute(State& state, vector<Attribute>& attributes) {
@@ -183,8 +186,9 @@ namespace Xml {
 			}
 
 			if (isalpha(_currentChar)) {
-				attributeName.append(&_currentChar);
-			} else {
+				attributeName += _currentChar;
+			}
+			else {
 				throw "Expected attribute name starting with alpha char. Given: " + _currentChar;
 				return false;
 			}
@@ -192,7 +196,7 @@ namespace Xml {
 			while (fileStreamInputFile.get(_currentChar)) {
 				if (!isalnum(_currentChar))
 					break;
-				attributeName.append(&_currentChar);
+				attributeName += _currentChar;
 			}
 
 			skipSpaces();
@@ -212,13 +216,13 @@ namespace Xml {
 			while (fileStreamInputFile.get(_currentChar)) {
 				if (_currentChar == TOKEN_QUOTE)
 					break;
-				attributeValue.append(&_currentChar);
+				attributeValue += _currentChar;
 			}
 
 			attributes.push_back(Attribute(attributeName, attributeValue));
 
 			// To have _currentChar populated during next execution of this function
-			fileStreamInputFile.get(_currentChar); 
+			fileStreamInputFile.get(_currentChar);
 
 			return true;
 		}
@@ -234,34 +238,84 @@ namespace Xml {
 			} while (fileStreamInputFile.get(_currentChar));
 		}
 
-		shared_ptr<Node>& processStateTagContent(State& state, string& tagName, vector<Attribute>& attributes) {
+		shared_ptr<Node> processStateTagContent(State& state, string& const tagName, vector<Attribute>& const attributes) {
 
 			string plainContent;
-			auto currentFilePosition = fileStreamInputFile.tellg();
 
 			skipSpaces();
 			if (_currentChar == TOKEN_TAG_OPEN) // Embedded tags or closing tag 
-			{ 
-				auto innerNodes = parse();
+			{
+				fileStreamInputFile.unget();
+				vector<shared_ptr<Node>> innerNodes = parse();
+				fileStreamInputFile.unget();
+
+				stringbuf buffer;
+				fileStreamInputFile.get(buffer, TOKEN_TAG_CLOSE);
+				if (buffer.str() != ("/" + tagName))
+					throw "Tag's content not properly enclosed";
+				state = State::S_Outside;
+
 				return shared_ptr<Node>(new ParentNode(tagName, attributes, innerNodes));
-			} 
+			}
 			else // Plain string content
-			{ 
+			{
 				do {
 					if (_currentChar == TOKEN_TAG_OPEN) { // Closing tag
 						stringbuf buffer;
 						fileStreamInputFile.get(buffer, TOKEN_TAG_CLOSE);
-						if (buffer.str() != ("/" + tagName))
+						size_t found = buffer.str().find("/" + tagName);
+						if (found == string::npos) // Not found
 							throw "Tag's content not properly enclosed";
 						state = State::S_Outside;
 						break;
 					}
 
-					plainContent.append(&_currentChar);
+					plainContent += _currentChar;
 				} while (fileStreamInputFile.get(_currentChar));
 
 				return shared_ptr<Node>(new LeafNode(tagName, attributes, plainContent));
 			}
+		}
+
+		auto elapsed() {
+			static date_time prev;
+			auto now = sys_clock::now();
+			auto result = chrono::duration_cast<chrono::milliseconds>(now - prev).count();
+			prev = now;
+			return result;
+		}
+
+	public:
+		XmlReader() {
+			_nodes = vector<shared_ptr<Node>>();
+		}
+
+		vector<shared_ptr<Node>>& getNodes() { return _nodes; }
+
+		bool load(string strFileName) {
+			if (!ifstream(strFileName)) {
+				throw "Not found '" + strFileName + "' file.";
+				return false;
+			}
+
+			fileStreamInputFile.open(strFileName, ios::in);
+			return fileStreamInputFile.is_open();
+		}
+
+		double run() {
+
+			elapsed();
+			_nodes = parse();
+			return elapsed() / 1000.0;
+		}
+
+		bool close() {
+			if (fileStreamInputFile.is_open()) {
+				fileStreamInputFile.close();
+				return true;
+			}
+
+			return false;
 		}
 	};
 }
