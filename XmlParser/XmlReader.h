@@ -3,16 +3,11 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <stack>
 #include <vector>
-#include <mutex>
 #include <chrono>
 #include <memory>
-#include <regex>
 #include <sstream> 
 #include <algorithm> 
-#include "windows.h"
-#include "atlstr.h"
 
 #define TOKEN_TAG_OPEN '<'
 #define TOKEN_TAG_CLOSE '>'
@@ -51,14 +46,17 @@ namespace Xml {
 	private:
 		string _name;
 		vector<Attribute> _attributes;
+		shared_ptr<Node> _parent;
 	public:
-		Node(string name, vector<Attribute>& attributes) {
+		Node(string name, vector<Attribute>& const attributes) {
 			_name = name;
 			_attributes = attributes;
 		}
 		virtual ~Node() = 0;
 
 		string getName() { return _name; }
+		void setParent(shared_ptr<Node> parentToSet) { _parent = parentToSet; }
+		shared_ptr<Node> getParent() { return _parent; }
 		vector<Attribute>& getAttributes() { return _attributes; }
 	};
 
@@ -80,16 +78,16 @@ namespace Xml {
 
 	class ParentNode : public Node {
 	private:
-		vector<shared_ptr<Node>> _childNodes;
+		vector<shared_ptr<Node>> _childrenNodes;
 	public:
 		ParentNode(string name, vector<Attribute>& attributes, vector<shared_ptr<Node>>& childNodes)
 			: Node(name, attributes) {
-			_childNodes = childNodes;
+			_childrenNodes = childNodes;
 		}
 
 		~ParentNode() { }
 
-		vector<shared_ptr<Node>>& _getNodes() { return _childNodes; }
+		vector<shared_ptr<Node>>& _getNodes() { return _childrenNodes; }
 	};
 
 	class XmlReader {
@@ -110,21 +108,23 @@ namespace Xml {
 
 			while (fileStreamInputFile.get(_currentChar)) {
 				switch (state) {
-				case S_Outside:    processStateOutside(state);
+				case S_Outside:    
+					processStateOutside(state);
 					break;
-				case S_TagName:    processStateTagName(state, currentTagName);
+				case S_TagName:    
+					processStateTagName(state, currentTagName);
 					break;
-				case S_Attribute:  while (processStateAttribute(state, currentAttributes));
+				case S_Attribute:  
+					while (processStateAttribute(state, currentAttributes));
 					break;
 				case S_ClosingException:
 					return toReturn;
-				case S_TagContent: {
-					auto node = processStateTagContent(state, currentTagName, currentAttributes);
+				case S_TagContent: 
+					shared_ptr<Node> node = processStateTagContent(state, currentTagName, currentAttributes);
 					currentAttributes.clear();
 					currentTagName.clear();
 					toReturn.push_back(node);
 					break;
-				}
 				}
 			}
 
@@ -187,8 +187,7 @@ namespace Xml {
 
 			if (isalpha(_currentChar)) {
 				attributeName += _currentChar;
-			}
-			else {
+			} else {
 				throw "Expected attribute name starting with alpha char. Given: " + _currentChar;
 				return false;
 			}
@@ -238,6 +237,12 @@ namespace Xml {
 			} while (fileStreamInputFile.get(_currentChar));
 		}
 
+		void setParentForChildren(vector<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet) {
+			for (shared_ptr<Node>& childrenNode : childrenNodes) {
+				childrenNode->setParent(parentNodeToSet);
+			}
+		}
+
 		shared_ptr<Node> processStateTagContent(State& state, string& const tagName, vector<Attribute>& const attributes) {
 
 			string plainContent;
@@ -246,7 +251,7 @@ namespace Xml {
 			if (_currentChar == TOKEN_TAG_OPEN) // Embedded tags or closing tag 
 			{
 				fileStreamInputFile.unget();
-				vector<shared_ptr<Node>> innerNodes = parse();
+				vector<shared_ptr<Node>> children = parse();
 				fileStreamInputFile.unget();
 
 				stringbuf buffer;
@@ -255,7 +260,9 @@ namespace Xml {
 					throw "Tag's content not properly enclosed";
 				state = State::S_Outside;
 
-				return shared_ptr<Node>(new ParentNode(tagName, attributes, innerNodes));
+				auto parent = shared_ptr<ParentNode>(new ParentNode(tagName, attributes, children));
+				setParentForChildren(children, parent);
+				return parent;
 			}
 			else // Plain string content
 			{
