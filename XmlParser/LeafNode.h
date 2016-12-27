@@ -18,6 +18,8 @@ namespace Xml
 
 		~LeafNode() { }
 
+		bool getIsParent() override { return false; }
+
 		string getInnerText() const { return _innerText; }
 	};
 }

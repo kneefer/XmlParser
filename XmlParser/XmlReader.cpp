@@ -20,9 +20,7 @@ namespace Xml {
 				processStateTagName(state, currentTagName);
 				break;
 			case S_Attribute:
-				while (processStateAttribute(state, currentAttributes))
-				{
-				}
+				while (processStateAttribute(state, currentAttributes)) { }
 				break;
 			case S_ClosingException:
 				return toReturn;
@@ -175,7 +173,7 @@ namespace Xml {
 		}
 	}
 
-	bool XmlReader::load(string strFileName) {
+	bool XmlReader::openXmlFile(string strFileName) {
 		if (!ifstream(strFileName))
 			throw "Not found '" + strFileName + "' file.";
 
@@ -183,7 +181,7 @@ namespace Xml {
 		return fileStreamInputFile.is_open();
 	}
 
-	double XmlReader::run() {
+	double XmlReader::runParsing() {
 		if (!fileStreamInputFile.is_open())
 			throw "Any file to parse is not open";
 
@@ -192,7 +190,7 @@ namespace Xml {
 		return elapsed() / 1000.0;
 	}
 
-	bool XmlReader::close() {
+	bool XmlReader::closeXmlFile() {
 		if (fileStreamInputFile.is_open()) {
 			fileStreamInputFile.close();
 			return true;
@@ -200,7 +198,33 @@ namespace Xml {
 		return false;
 	}
 
-	void XmlReader::print() {
+	string XmlReader::generateXmlString() {
+		ostringstream os;
+		return generateXmlString(os, _nodes, 0);
+	}
 
+	string XmlReader::generateXmlString(ostringstream& os, vector<shared_ptr<Node>>& nodes, int nestLvl) const {
+		for(auto& node : nodes) {
+			os << string(nestLvl, '\t') << TOKEN_TAG_OPEN << node->getName();
+			for(auto& attr : node->getAttributes()) {
+				os << " " << attr.getName() << TOKEN_ASSIGNMENT << TOKEN_QUOTE << attr.getValue() << TOKEN_QUOTE;
+			}
+			os << TOKEN_TAG_CLOSE;
+			if(node->getIsParent()) {
+				os << endl;
+				auto parentCasted = dynamic_pointer_cast<ParentNode>(node);
+				generateXmlString(os, parentCasted->getNodes(), nestLvl + 1);
+				os << endl << string(nestLvl, '\t');
+			} else { // Is leaf
+				auto leafCasted = dynamic_pointer_cast<LeafNode>(node);
+				os << leafCasted->getInnerText();
+			}
+
+			os << TOKEN_TAG_OPEN << '/' << node->getName() << TOKEN_TAG_CLOSE << endl;
+		}
+
+		return nestLvl == 0
+			? os.str()
+			: "";
 	}
 }

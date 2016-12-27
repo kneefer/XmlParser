@@ -17,6 +17,7 @@ namespace Xml
 			_attributes = attributes;
 		}
 		virtual ~Node() = 0;
+		virtual bool getIsParent() = 0;
 
 		string getName() const { return _name; }
 		void setParent(shared_ptr<Node> parentToSet) { _parent = parentToSet; }

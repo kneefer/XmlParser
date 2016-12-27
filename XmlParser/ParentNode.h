@@ -18,6 +18,7 @@ namespace Xml
 
 		~ParentNode() { }
 
-		vector<shared_ptr<Node>>& _getNodes() { return _childrenNodes; }
+		bool getIsParent() override { return true; }
+		vector<shared_ptr<Node>>& getNodes() { return _childrenNodes; }
 	};
 }

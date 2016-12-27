@@ -26,6 +26,8 @@ namespace Xml {
 
 		void skipSpaces(bool getAtTheBeginning = false);
 		static void setParentForChildren(vector<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet);
+		string generateXmlString(ostringstream& os, vector<shared_ptr<Node>> & nodes, int nestLvl) const;
+		
 		auto elapsed() {
 			static date_time prev;
 			auto now = sys_clock::now();
@@ -38,10 +40,10 @@ namespace Xml {
 		XmlReader();
 
 		vector<shared_ptr<Node>>& getNodes();
-		bool load(string strFileName);
-		double run();
-		bool close();
-		void print();
+		bool openXmlFile(string strFileName);
+		double runParsing();
+		bool closeXmlFile();
+		string generateXmlString();
 	};
 
 	inline XmlReader::XmlReader() : _currentChar(0) {
