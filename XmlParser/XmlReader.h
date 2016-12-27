@@ -2,12 +2,10 @@
 
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <vector>
 #include <chrono>
 #include <memory>
 #include <sstream> 
-#include <algorithm> 
 
 #define TOKEN_TAG_OPEN '<'
 #define TOKEN_TAG_CLOSE '>'
@@ -16,8 +14,8 @@
 
 using namespace std;
 
-using sys_clock = std::chrono::high_resolution_clock;
-using date_time = std::chrono::time_point<sys_clock>;
+using sys_clock = chrono::high_resolution_clock;
+using date_time = chrono::time_point<sys_clock>;
 
 namespace Xml {
 	enum State {
@@ -38,49 +36,46 @@ namespace Xml {
 			_value = value;
 		}
 
-		string getName() { return _name; }
-		string getValue() { return _value; }
+		string getName() const { return _name; }
+		string getValue() const { return _value; }
 	};
 
 	class Node {
-	private:
 		string _name;
 		vector<Attribute> _attributes;
 		shared_ptr<Node> _parent;
 	public:
-		Node(string name, vector<Attribute>& const attributes) {
+		Node(string name, vector<Attribute> const &attributes) {
 			_name = name;
 			_attributes = attributes;
 		}
 		virtual ~Node() = 0;
 
-		string getName() { return _name; }
+		string getName() const { return _name; }
 		void setParent(shared_ptr<Node> parentToSet) { _parent = parentToSet; }
-		shared_ptr<Node> getParent() { return _parent; }
+		shared_ptr<Node> getParent() const { return _parent; }
 		vector<Attribute>& getAttributes() { return _attributes; }
 	};
 
-	Node::~Node() { }
+	inline Node::~Node() { }
 
 	class LeafNode : public Node {
-	private:
 		string _innerText;
 	public:
-		LeafNode(string name, vector<Attribute>& attributes, string innerText)
+		LeafNode(string name, vector<Attribute> const &attributes, string innerText)
 			: Node(name, attributes) {
 			_innerText = innerText;
 		}
 
 		~LeafNode() { }
 
-		string getInnerText() { return _innerText; }
+		string getInnerText() const { return _innerText; }
 	};
 
 	class ParentNode : public Node {
-	private:
 		vector<shared_ptr<Node>> _childrenNodes;
 	public:
-		ParentNode(string name, vector<Attribute>& attributes, vector<shared_ptr<Node>>& childNodes)
+		ParentNode(string name, vector<Attribute> const &attributes, vector<shared_ptr<Node>>& childNodes)
 			: Node(name, attributes) {
 			_childrenNodes = childNodes;
 		}
@@ -91,11 +86,8 @@ namespace Xml {
 	};
 
 	class XmlReader {
-	private:
 		ifstream fileStreamInputFile;
-		int filePosition;
 		vector<shared_ptr<Node>> _nodes;
-
 		char _currentChar;
 
 		vector<shared_ptr<Node>> parse() {
@@ -143,9 +135,8 @@ namespace Xml {
 					fileStreamInputFile.unget();
 					return;
 				}
-				else {
-					fileStreamInputFile.unget();
-				}
+
+				fileStreamInputFile.unget();
 			}
 
 			state = S_TagName;
@@ -168,8 +159,6 @@ namespace Xml {
 				}
 
 				currentTagName += _currentChar;
-				continue;
-
 			} while (fileStreamInputFile.get(_currentChar));
 		}
 
@@ -189,7 +178,6 @@ namespace Xml {
 				attributeName += _currentChar;
 			} else {
 				throw "Expected attribute name starting with alpha char. Given: " + _currentChar;
-				return false;
 			}
 
 			while (fileStreamInputFile.get(_currentChar)) {
@@ -200,17 +188,13 @@ namespace Xml {
 
 			skipSpaces();
 
-			if (_currentChar != TOKEN_ASSIGNMENT) {
+			if (_currentChar != TOKEN_ASSIGNMENT)
 				throw "Expected equal sign after attribute name. Given: " + _currentChar;
-				return false;
-			}
 
 			skipSpaces(true);
 
-			if (_currentChar != TOKEN_QUOTE) {
+			if (_currentChar != TOKEN_QUOTE)
 				throw "Expected quotation sign to start attribute value. Given: " + _currentChar;
-				return false;
-			}
 
 			while (fileStreamInputFile.get(_currentChar)) {
 				if (_currentChar == TOKEN_QUOTE)
@@ -237,13 +221,13 @@ namespace Xml {
 			} while (fileStreamInputFile.get(_currentChar));
 		}
 
-		void setParentForChildren(vector<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet) {
-			for (shared_ptr<Node>& childrenNode : childrenNodes) {
+		static void setParentForChildren(vector<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet) {
+			for (auto& childrenNode : childrenNodes) {
 				childrenNode->setParent(parentNodeToSet);
 			}
 		}
 
-		shared_ptr<Node> processStateTagContent(State& state, string& const tagName, vector<Attribute>& const attributes) {
+		shared_ptr<Node> processStateTagContent(State& state, string const &tagName, vector<Attribute> const &attributes) {
 
 			string plainContent;
 
@@ -260,7 +244,7 @@ namespace Xml {
 					throw "Tag's content not properly enclosed";
 				state = State::S_Outside;
 
-				auto parent = shared_ptr<ParentNode>(new ParentNode(tagName, attributes, children));
+				auto parent = make_shared<ParentNode>(tagName, attributes, children);
 				setParentForChildren(children, parent);
 				return parent;
 			}
@@ -280,7 +264,7 @@ namespace Xml {
 					plainContent += _currentChar;
 				} while (fileStreamInputFile.get(_currentChar));
 
-				return shared_ptr<Node>(new LeafNode(tagName, attributes, plainContent));
+				return static_pointer_cast<Node>(make_shared<LeafNode>(tagName, attributes, plainContent));
 			}
 		}
 
@@ -293,7 +277,8 @@ namespace Xml {
 		}
 
 	public:
-		XmlReader() {
+		XmlReader(): _currentChar(0)
+		{
 			_nodes = vector<shared_ptr<Node>>();
 		}
 
@@ -302,7 +287,6 @@ namespace Xml {
 		bool load(string strFileName) {
 			if (!ifstream(strFileName)) {
 				throw "Not found '" + strFileName + "' file.";
-				return false;
 			}
 
 			fileStreamInputFile.open(strFileName, ios::in);
