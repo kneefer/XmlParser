@@ -29,7 +29,7 @@ namespace Xml {
 
 		inline void skipSpaces(bool getAtTheBeginning = false);
 		inline static void setParentForChildren(list<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet);
-		string generateXmlString(ostringstream& os, shared_ptr<XmlContainer> nodes, int nestLvl) const;
+		string generateXmlString(ostringstream& os, XmlContainer* nodes, int nestLvl) const;
 		
 		auto elapsed() {
 			static date_time prev;

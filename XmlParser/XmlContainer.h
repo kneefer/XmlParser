@@ -18,6 +18,7 @@ namespace Xml {
 		const_iterator begin() const;
 		iterator end();
 		const_iterator end() const;
+
 		int size() const;
 		shared_ptr<Node> nth(int index) const;
 	};

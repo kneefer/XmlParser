@@ -10,6 +10,8 @@ using namespace Xml;
 #define KEY_ARROW_DOWN_CODE  80
 #define KEY_ARROW_LEFT_CODE  75
 #define KEY_ARROW_RIGHT_CODE 77
+#define KEY_INSERT_CODE      82
+#define KEY_DELETE_CODE      83
 
 XmlContainer nodes;
 shared_ptr<Node> currentNode;
@@ -131,6 +133,34 @@ void navigateStepInto() {
 	cout << "You cannot step into" << endl;
 }
 
+void deleteCurrentNode() {
+	auto parent = currentNode->getParent();
+	if (parent) {
+		auto parentCasted = dynamic_pointer_cast<ParentNode>(parent);
+		parentCasted->removeChild(currentNode);
+		cout << "Successfully removed element";
+		navigateStepOut();
+	} else {
+		cout << "You cannot delete most outside element" << endl;
+	}
+}
+void insertInCurrentLocation() {
+	if (currentNode->getIsParent()) {
+		auto currentAsParent = dynamic_pointer_cast<ParentNode>(currentNode);
+		map<string, string> testMap;
+		testMap.emplace("att1", "attVal1");
+		testMap.emplace("att2", "attVal2");
+
+		auto node = make_shared<LeafNode>("test_element_name", testMap, "Test inner text");
+		currentAsParent->insert(node);
+
+		if (currentNode->getParent())
+			navigateStepOut();
+	} else {
+		cout << "You cannot insert new element to leaf node (must be of parent type)" << endl;
+	}
+}
+
 void main() {
 	XmlReader xmlReader;
 
@@ -152,6 +182,8 @@ void main() {
 
 	cout << "- Navigate XML tree using arrow keys."
 		<< endl << "- Press ESC to exit"
+		<< endl << "- Press INSERT to create sample element in current parent node"
+		<< endl << "- Press DELETE to remove current element"
 		<< endl << "- Press S to save XML" << endl;
 
 	while(!exitRequested) {
@@ -179,6 +211,12 @@ void main() {
 				break;
 			case KEY_ARROW_RIGHT_CODE: 
 				navigateStepInto();
+				break;
+			case KEY_DELETE_CODE:
+				deleteCurrentNode();
+				break;
+			case KEY_INSERT_CODE:
+				insertInCurrentLocation();
 				break;
 			default: 
 				cout << "Unknown keycode: " << static_cast<int>(keyCode) << endl;

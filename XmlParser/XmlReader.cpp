@@ -199,11 +199,11 @@ namespace Xml {
 
 	string XmlReader::generateXmlString() {
 		ostringstream os;
-		return generateXmlString(os, shared_ptr<XmlContainer>(this), 0);
+		return generateXmlString(os, this, 0);
 	}
 
-	string XmlReader::generateXmlString(ostringstream& os, shared_ptr<XmlContainer> nodes, int nestLvl) const {
-		for(auto& node : *nodes.get()) {
+	string XmlReader::generateXmlString(ostringstream& os, XmlContainer* nodes, int nestLvl) const {
+		for(auto& node : *nodes) {
 			os << string(nestLvl, '\t') << TOKEN_TAG_OPEN << node->getName();
 			for(auto& attr : node->getAttributes()) {
 				os << " " << attr.first << TOKEN_ASSIGNMENT << TOKEN_QUOTE << attr.second << TOKEN_QUOTE;
@@ -212,7 +212,7 @@ namespace Xml {
 			if(node->getIsParent()) {
 				os << endl;
 				auto parentCasted = dynamic_pointer_cast<ParentNode>(node);
-				generateXmlString(os, parentCasted, nestLvl + 1);
+				generateXmlString(os, parentCasted.get(), nestLvl + 1);
 				os << endl << string(nestLvl, '\t');
 			} else { // Is leaf
 				auto leafCasted = dynamic_pointer_cast<LeafNode>(node);
