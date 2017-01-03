@@ -11,7 +11,7 @@ namespace Xml
 	class LeafNode : public Node {
 		string _innerText;
 	public:
-		LeafNode(string name, vector<Attribute> const &attributes, string innerText)
+		LeafNode(string name, map<string, string> const &attributes, string innerText)
 			: Node(name, attributes) {
 			_innerText = innerText;
 		}
@@ -19,7 +19,6 @@ namespace Xml
 		~LeafNode() { }
 
 		bool getIsParent() override { return false; }
-
 		string getInnerText() const { return _innerText; }
 	};
 }

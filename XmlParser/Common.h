@@ -2,8 +2,11 @@
 
 #include <fstream>
 #include <iostream>
+#include <list>
+#include <map>
 #include <vector>
 #include <chrono>
+#include <iterator>
 #include <memory>
 #include <sstream> 
 

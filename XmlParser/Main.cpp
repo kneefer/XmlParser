@@ -11,7 +11,7 @@ using namespace Xml;
 #define KEY_ARROW_LEFT_CODE  75
 #define KEY_ARROW_RIGHT_CODE 77
 
-vector<shared_ptr<Node>> nodes;
+XmlContainer nodes;
 shared_ptr<Node> currentNode;
 int currentIndex = 0;
 unsigned char keyCode;
@@ -31,8 +31,8 @@ void printNode(shared_ptr<Node> nodeToPrint, int currentIndex)
 			attributesToPrint.append("\t\t");
 		}
 		attributesToPrint.append(
-			"K: " + attribute.getName() + 
-			" V: " + attribute.getValue() + "\n");
+			"K: " + attribute.first + 
+			" V: " + attribute.second + "\n");
 	}
 
 	auto name = nodeToPrint->getName();
@@ -43,7 +43,7 @@ void printNode(shared_ptr<Node> nodeToPrint, int currentIndex)
 
 	if(isParent) {
 		auto parentCasted = dynamic_pointer_cast<ParentNode>(nodeToPrint);
-		cout << "Children count:\t" << parentCasted->getNodes().size() << endl;
+		cout << "Children count:\t" << parentCasted->size() << endl;
 	} else { // Is leaf
 		auto leafCasted = dynamic_pointer_cast<LeafNode>(nodeToPrint);
 		cout << "Content:\t" << leafCasted->getInnerText() << endl;
@@ -75,9 +75,9 @@ void navigateGoPreviousElement() {
 	auto parent = currentNode->getParent();
 	auto parentCasted = dynamic_pointer_cast<ParentNode>(parent);
 	if (parentCasted) {
-		currentNode = parentCasted->getNodes()[currentIndex];
+		currentNode = parentCasted->nth(currentIndex);
 	} else {
-		currentNode = nodes[currentIndex];
+		currentNode = nodes.nth(currentIndex);
 	}
 }
 
@@ -85,17 +85,17 @@ void navigateGoNextElement() {
 	auto parent = currentNode->getParent();
 	auto parentCasted = dynamic_pointer_cast<ParentNode>(parent);
 	if (parentCasted) {
-		if(currentIndex >= (parentCasted->getNodes().size() - 1)) {
+		if(currentIndex >= (parentCasted->size() - 1)) {
 			cout << "You cannot go to the next element" << endl;
 			return;
 		}
-		currentNode = parentCasted->getNodes()[++currentIndex];
+		currentNode = parentCasted->nth(++currentIndex);
 	} else {
 		if(currentIndex >= (nodes.size() - 1)) {
 			cout << "You cannot go to the next element" << endl;
 			return;
 		}
-		currentNode = nodes[++currentIndex];
+		currentNode = nodes.nth(++currentIndex);
 	}
 }
 
@@ -106,10 +106,9 @@ void navigateStepOut() {
 		auto parentOfParent = parent->getParent();
 		if(parentOfParent) {
 			auto parentOfParentCasted = dynamic_pointer_cast<ParentNode>(parentOfParent);
-			auto parentOfParentNodes = parentOfParentCasted->getNodes();
 
-			auto vecIter = find(parentOfParentNodes.begin(), parentOfParentNodes.end(), parent);
-			currentIndex = distance(parentOfParentNodes.begin(), vecIter);
+			auto vecIter = find(parentOfParentCasted->begin(), parentOfParentCasted->end(), parent);
+			currentIndex = distance(parentOfParentCasted->begin(), vecIter);
 		} else {
 			currentIndex = 0;
 		}
@@ -123,9 +122,8 @@ void navigateStepOut() {
 void navigateStepInto() {
 	if (currentNode->getIsParent()) {
 		auto parentCasted = dynamic_pointer_cast<ParentNode>(currentNode);
-		auto childrenNodes = parentCasted->getNodes();
-		if (childrenNodes.size() > 0) {
-			currentNode = childrenNodes[0];
+		if (parentCasted->size() > 0) {
+			currentNode = parentCasted->nth(0);
 			currentIndex = 0;
 			return;
 		}
@@ -141,14 +139,14 @@ void main() {
 
 	cout << "Duration: " << xmlReader.runParsing() << " seconds" << endl << endl;
 	xmlReader.closeXmlFile();
-	nodes = xmlReader.getNodes();
+	nodes = static_cast<XmlContainer>(xmlReader);
 
 	if (nodes.size() < 1) {
 		cout << "No nodes available";
 		return;
 	}
 
-	currentNode = nodes[0];
+	currentNode = nodes.nth(0);
 
 	cout << "- Navigate XML tree using arrow keys."
 		<< endl << "- Press ESC to exit"

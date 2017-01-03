@@ -146,11 +146,11 @@
     <ClCompile Include="XmlReader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Attribute.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="LeafNode.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="ParentNode.h" />
+    <ClInclude Include="XmlContainer.h" />
     <ClInclude Include="XmlReader.h" />
   </ItemGroup>
   <ItemGroup>

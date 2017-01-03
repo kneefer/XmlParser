@@ -1,14 +1,12 @@
 #include "XmlReader.h"
 
-using namespace std;
-
 namespace Xml {
 
-	inline vector<shared_ptr<Node>> XmlReader::parse() {
-		vector<shared_ptr<Node>> toReturn;
+	inline list<shared_ptr<Node>> XmlReader::parse() {
+		list<shared_ptr<Node>> toReturn;
 
 		string currentTagName;
-		vector<Attribute> currentAttributes;
+		map<string, string> currentAttributes;
 		State state = State::S_Outside;
 
 		while (fileStreamInputFile.get(_currentChar)) {
@@ -72,7 +70,7 @@ namespace Xml {
 		} while (fileStreamInputFile.get(_currentChar));
 	}
 
-	inline bool XmlReader::processStateAttribute(State& state, vector<Attribute>& attributes) {
+	inline bool XmlReader::processStateAttribute(State& state, map<string, string>& attributes) {
 		string attributeName;
 		string attributeValue;
 
@@ -110,7 +108,7 @@ namespace Xml {
 			attributeValue += _currentChar;
 		}
 
-		attributes.push_back(Attribute(attributeName, attributeValue));
+		attributes.emplace(attributeName, attributeValue);
 
 		// To have _currentChar populated during next execution of this function
 		fileStreamInputFile.get(_currentChar);
@@ -128,19 +126,19 @@ namespace Xml {
 		} while (fileStreamInputFile.get(_currentChar));
 	}
 
-	inline void XmlReader::setParentForChildren(vector<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet) {
+	inline void XmlReader::setParentForChildren(list<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet) {
 		for (auto& childrenNode : childrenNodes)
 			childrenNode->setParent(parentNodeToSet);
 	}
 
-	inline shared_ptr<Node> XmlReader::processStateTagContent(State& state, string const& tagName, vector<Attribute> const& attributes) {
+	inline shared_ptr<Node> XmlReader::processStateTagContent(State& state, string const& tagName, map<string, string> const& attributes) {
 		string plainContent;
 
 		skipSpaces();
 		if (_currentChar == TOKEN_TAG_OPEN) // Embedded tags or closing tag 
 		{
 			fileStreamInputFile.unget();
-			vector<shared_ptr<Node>> children = parse();
+			list<shared_ptr<Node>> children = parse();
 			fileStreamInputFile.unget();
 
 			stringbuf buffer;
@@ -200,20 +198,20 @@ namespace Xml {
 
 	string XmlReader::generateXmlString() {
 		ostringstream os;
-		return generateXmlString(os, _nodes, 0);
+		return generateXmlString(os, shared_ptr<XmlContainer>(this), 0);
 	}
 
-	string XmlReader::generateXmlString(ostringstream& os, vector<shared_ptr<Node>>& nodes, int nestLvl) const {
-		for(auto& node : nodes) {
+	string XmlReader::generateXmlString(ostringstream& os, shared_ptr<XmlContainer> nodes, int nestLvl) const {
+		for(auto& node : *nodes.get()) {
 			os << string(nestLvl, '\t') << TOKEN_TAG_OPEN << node->getName();
 			for(auto& attr : node->getAttributes()) {
-				os << " " << attr.getName() << TOKEN_ASSIGNMENT << TOKEN_QUOTE << attr.getValue() << TOKEN_QUOTE;
+				os << " " << attr.first << TOKEN_ASSIGNMENT << TOKEN_QUOTE << attr.second << TOKEN_QUOTE;
 			}
 			os << TOKEN_TAG_CLOSE;
 			if(node->getIsParent()) {
 				os << endl;
 				auto parentCasted = dynamic_pointer_cast<ParentNode>(node);
-				generateXmlString(os, parentCasted->getNodes(), nestLvl + 1);
+				generateXmlString(os, parentCasted, nestLvl + 1);
 				os << endl << string(nestLvl, '\t');
 			} else { // Is leaf
 				auto leafCasted = dynamic_pointer_cast<LeafNode>(node);

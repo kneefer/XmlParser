@@ -32,13 +32,13 @@
     <ClInclude Include="Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Attribute.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ParentNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LeafNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XmlContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
