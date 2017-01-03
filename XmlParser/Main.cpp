@@ -134,11 +134,13 @@ void navigateStepInto() {
 void main() {
 	XmlReader xmlReader;
 
-	if (!xmlReader.openXmlFile("Test.xml"))
+	try {
+		cout << "Duration: " << xmlReader.runParsing("Test.xml") << " seconds" << endl << endl;
+	} catch(string message) {
+		cout << "Problem while parsing XML: Error: " << message;
 		return;
-
-	cout << "Duration: " << xmlReader.runParsing() << " seconds" << endl << endl;
-	xmlReader.closeXmlFile();
+	}
+	
 	nodes = static_cast<XmlContainer>(xmlReader);
 
 	if (nodes.size() < 1) {
@@ -184,5 +186,5 @@ void main() {
 	}
 
 	cout << "\nPress enter to exit!";
-	cin.get();
+	std::cin.get();
 }

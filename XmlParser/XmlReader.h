@@ -27,8 +27,8 @@ namespace Xml {
 		bool processStateAttribute(State& state, map<string, string>& attributes);
 		shared_ptr<Node> processStateTagContent(State& state, string const& tagName, map<string, string> const& attributes);
 
-		void skipSpaces(bool getAtTheBeginning = false);
-		static void setParentForChildren(list<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet);
+		inline void skipSpaces(bool getAtTheBeginning = false);
+		inline static void setParentForChildren(list<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet);
 		string generateXmlString(ostringstream& os, shared_ptr<XmlContainer> nodes, int nestLvl) const;
 		
 		auto elapsed() {
@@ -39,12 +39,12 @@ namespace Xml {
 			return result;
 		}
 
+		inline bool openXmlFile(string fileName);
+		inline bool closeXmlFile();
 	public:
 		XmlReader();
-
-		bool openXmlFile(string strFileName);
-		double runParsing();
-		bool closeXmlFile();
+		
+		double runParsing(string fileName);
 		string generateXmlString();
 	};
 

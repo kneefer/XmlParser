@@ -2,7 +2,7 @@
 
 namespace Xml {
 
-	inline list<shared_ptr<Node>> XmlReader::parse() {
+	list<shared_ptr<Node>> XmlReader::parse() {
 		list<shared_ptr<Node>> toReturn;
 
 		string currentTagName;
@@ -34,7 +34,7 @@ namespace Xml {
 		return toReturn;
 	}
 
-	inline void XmlReader::processStateOutside(State& state) {
+	void XmlReader::processStateOutside(State& state) {
 		if (_currentChar != TOKEN_TAG_OPEN)
 			return;
 
@@ -51,7 +51,7 @@ namespace Xml {
 		state = S_TagName;
 	}
 
-	inline void XmlReader::processStateTagName(State& state, string& currentTagName) {
+	void XmlReader::processStateTagName(State& state, string& currentTagName) {
 		if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':'))
 			throw "Expected correct first character of tag name. Given: " + _currentChar;
 
@@ -70,7 +70,7 @@ namespace Xml {
 		} while (fileStreamInputFile.get(_currentChar));
 	}
 
-	inline bool XmlReader::processStateAttribute(State& state, map<string, string>& attributes) {
+	bool XmlReader::processStateAttribute(State& state, map<string, string>& attributes) {
 		string attributeName;
 		string attributeValue;
 
@@ -116,7 +116,7 @@ namespace Xml {
 		return true;
 	}
 
-	inline void XmlReader::skipSpaces(bool getAtTheBeginning) {
+	void XmlReader::skipSpaces(bool getAtTheBeginning) {
 		if (getAtTheBeginning)
 			fileStreamInputFile.get(_currentChar);
 
@@ -126,12 +126,12 @@ namespace Xml {
 		} while (fileStreamInputFile.get(_currentChar));
 	}
 
-	inline void XmlReader::setParentForChildren(list<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet) {
+	void XmlReader::setParentForChildren(list<shared_ptr<Node>> childrenNodes, shared_ptr<ParentNode> parentNodeToSet) {
 		for (auto& childrenNode : childrenNodes)
 			childrenNode->setParent(parentNodeToSet);
 	}
 
-	inline shared_ptr<Node> XmlReader::processStateTagContent(State& state, string const& tagName, map<string, string> const& attributes) {
+	shared_ptr<Node> XmlReader::processStateTagContent(State& state, string const& tagName, map<string, string> const& attributes) {
 		string plainContent;
 
 		skipSpaces();
@@ -171,20 +171,21 @@ namespace Xml {
 		}
 	}
 
-	bool XmlReader::openXmlFile(string strFileName) {
-		if (!ifstream(strFileName))
-			throw "Not found '" + strFileName + "' file.";
+	bool XmlReader::openXmlFile(string fileName) {
+		if (!ifstream(fileName))
+			throw "Not found '" + fileName + "' file.";
 
-		fileStreamInputFile.open(strFileName, ios::in);
+		fileStreamInputFile.open(fileName, ios::in);
 		return fileStreamInputFile.is_open();
 	}
 
-	double XmlReader::runParsing() {
-		if (!fileStreamInputFile.is_open())
+	double XmlReader::runParsing(string fileName) {
+		if (!openXmlFile(fileName))
 			throw "Any file to parse is not open";
 
 		elapsed();
 		_nodes = parse();
+		closeXmlFile();
 		return elapsed() / 1000.0;
 	}
 
