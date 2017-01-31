@@ -23,8 +23,10 @@ namespace Xml {
 		list<shared_ptr<Node>> parse();
 
 		void processStateOutside(State& state);
+		int goThroughTheTree(XmlContainer* nodes) const;
 		void processStateTagName(State& state, string& currentTagName);
 		bool processStateAttribute(State& state, map<string, string>& attributes);
+		shared_ptr<Node> processStateSelfCloseException(State& state, string& tagName, map<string, string>& attributes) const;
 		shared_ptr<Node> processStateTagContent(State& state, string const& tagName, map<string, string> const& attributes);
 
 		inline void skipSpaces(bool getAtTheBeginning = false);
@@ -45,6 +47,7 @@ namespace Xml {
 		XmlReader();
 		
 		double runParsing(string fileName);
+		double testGoThroughTheTree();
 		string generateXmlString();
 	};
 

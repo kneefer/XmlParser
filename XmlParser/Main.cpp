@@ -165,12 +165,13 @@ void main() {
 	XmlReader xmlReader;
 
 	try {
-		cout << "Duration: " << xmlReader.runParsing("Test.xml") << " seconds" << endl << endl;
+		cout << "Duration: " << xmlReader.runParsing("Test.xml") << " seconds" << endl;
+		cout << "Time: " << xmlReader.testGoThroughTheTree() << " seconds" << endl << endl;
 	} catch(string message) {
 		cout << "Problem while parsing XML: Error: " << message;
 		return;
 	}
-	
+
 	nodes = static_cast<XmlContainer>(xmlReader);
 
 	if (nodes.size() < 1) {

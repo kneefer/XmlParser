@@ -22,6 +22,7 @@ namespace Xml
 		S_TagName,
 		S_Attribute,
 		S_TagContent,
-		S_ClosingException
+		S_ClosingException,
+		S_SelfCloseException
 	};
 }

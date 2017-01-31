@@ -9,6 +9,8 @@ namespace Xml {
 		map<string, string> currentAttributes;
 		State state = State::S_Outside;
 
+		shared_ptr<Node> node;
+
 		while (fileStreamInputFile.get(_currentChar)) {
 			switch (state) {
 			case S_Outside:
@@ -23,9 +25,13 @@ namespace Xml {
 			case S_ClosingException:
 				return toReturn;
 			case S_TagContent:
-				shared_ptr<Node> node = processStateTagContent(state, currentTagName, currentAttributes);
+				node = processStateTagContent(state, currentTagName, currentAttributes);
 				currentAttributes.clear();
 				currentTagName.clear();
+				toReturn.push_back(node);
+				break;
+			case S_SelfCloseException:
+				node = processStateSelfCloseException(state, currentTagName, currentAttributes);
 				toReturn.push_back(node);
 				break;
 			}
@@ -49,6 +55,29 @@ namespace Xml {
 			fileStreamInputFile.unget();
 		}
 		state = S_TagName;
+	}
+
+	int XmlReader::goThroughTheTree(XmlContainer* nodes) const
+	{
+		int i = 0;
+
+		for (auto& node : *nodes) {
+			for (auto& attr : node->getAttributes()) {
+				i++;
+			}
+
+			if (node->getIsParent()) {
+				auto parentCasted = dynamic_pointer_cast<ParentNode>(node);
+				i += goThroughTheTree(parentCasted.get());
+			}
+			else { // Is leaf
+				auto leafCasted = dynamic_pointer_cast<LeafNode>(node);
+			}
+
+			i++;
+		}
+
+		return i;
 	}
 
 	void XmlReader::processStateTagName(State& state, string& currentTagName) {
@@ -81,13 +110,22 @@ namespace Xml {
 			return false;
 		}
 
-		if (isalpha(_currentChar))
+		if (isalpha(_currentChar)) {
 			attributeName += _currentChar;
-		else 
+		} else if (_currentChar == '/') {
+			skipSpaces(true);
+			if (_currentChar == TOKEN_TAG_CLOSE) {
+				state = S_SelfCloseException;
+				return false;
+			}
+			throw "Invorrect syntax. Schema '<tagName /' expects '>' char on next position";
+		} else {
 			throw "Expected attribute name starting with alpha char. Given: " + _currentChar;
+		}
+			
 
 		while (fileStreamInputFile.get(_currentChar)) {
-			if (!isalnum(_currentChar))
+			if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':'))
 				break;
 			attributeName += _currentChar;
 		}
@@ -114,6 +152,13 @@ namespace Xml {
 		fileStreamInputFile.get(_currentChar);
 
 		return true;
+	}
+
+	shared_ptr<Node> XmlReader::processStateSelfCloseException(State& state, string& tagName, map<string, string>& attributes) const {
+		state = S_Outside;
+		attributes.clear();
+		tagName.clear();
+		return static_pointer_cast<Node>(make_shared<LeafNode>(tagName, attributes));
 	}
 
 	void XmlReader::skipSpaces(bool getAtTheBeginning) {
@@ -186,6 +231,13 @@ namespace Xml {
 		elapsed();
 		_nodes = parse();
 		closeXmlFile();
+		return elapsed() / 1000.0;
+	}
+
+	double XmlReader::testGoThroughTheTree()
+	{
+		elapsed();
+		cout << "Visited: " << goThroughTheTree(this) << " nodes";
 		return elapsed() / 1000.0;
 	}
 

@@ -16,6 +16,11 @@ namespace Xml
 			_innerText = innerText;
 		}
 
+		LeafNode(string name, map<string, string> const &attributes)
+			: Node(name, attributes) {
+			_innerText = "";
+		}
+
 		~LeafNode() { }
 
 		bool getIsParent() override { return false; }

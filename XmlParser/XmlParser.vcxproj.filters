@@ -46,5 +46,8 @@
     <Xml Include="Test.xml">
       <Filter>Resource Files</Filter>
     </Xml>
+    <Xml Include="Test_big.xml">
+      <Filter>Resource Files</Filter>
+    </Xml>
   </ItemGroup>
 </Project>
