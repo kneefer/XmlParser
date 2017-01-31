@@ -13,6 +13,7 @@
 #define TOKEN_TAG_OPEN '<'
 #define TOKEN_TAG_CLOSE '>'
 #define TOKEN_QUOTE '"'
+#define TOKEN_QUOTE2 39
 #define TOKEN_ASSIGNMENT '='
 
 namespace Xml

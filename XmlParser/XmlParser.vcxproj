@@ -162,6 +162,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </Xml>
+    <Xml Include="Test_small.xml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Test.xml">

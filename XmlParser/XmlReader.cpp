@@ -81,7 +81,7 @@ namespace Xml {
 	}
 
 	void XmlReader::processStateTagName(State& state, string& currentTagName) {
-		if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':'))
+		if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':' || _currentChar == '.'))
 			throw "Expected correct first character of tag name. Given: " + _currentChar;
 
 		do {
@@ -93,6 +93,15 @@ namespace Xml {
 			if (_currentChar == TOKEN_TAG_CLOSE) {
 				state = S_TagContent;
 				break;
+			}
+
+			if (_currentChar == '/') {
+				skipSpaces(true);
+				if (_currentChar == TOKEN_TAG_CLOSE) {
+					state = S_SelfCloseException;
+					return;
+				}
+				throw "Invorrect syntax. Schema '<tagName /' expects '>' char on next position";
 			}
 
 			currentTagName += _currentChar;
@@ -125,7 +134,7 @@ namespace Xml {
 			
 
 		while (fileStreamInputFile.get(_currentChar)) {
-			if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':'))
+			if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':' || _currentChar == '.'))
 				break;
 			attributeName += _currentChar;
 		}
@@ -137,11 +146,13 @@ namespace Xml {
 
 		skipSpaces(true);
 
-		if (_currentChar != TOKEN_QUOTE)
+		if (_currentChar != TOKEN_QUOTE && _currentChar != TOKEN_QUOTE2)
 			throw "Expected quotation sign to start attribute value. Given: " + _currentChar;
 
+		char opener = _currentChar;
+
 		while (fileStreamInputFile.get(_currentChar)) {
-			if (_currentChar == TOKEN_QUOTE)
+			if (_currentChar == opener)
 				break;
 			attributeValue += _currentChar;
 		}
