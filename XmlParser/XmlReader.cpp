@@ -57,28 +57,26 @@ namespace Xml {
 		state = S_TagName;
 	}
 
-	int XmlReader::goThroughTheTree(XmlContainer* nodes) const
-	{
-		int i = 0;
+int XmlReader::goThroughTheTree(XmlContainer* nodes) const {
+	int i = 0;
 
-		for (auto& node : *nodes) {
-			for (auto& attr : node->getAttributes()) {
-				i++;
-			}
-
-			if (node->getIsParent()) {
-				auto parentCasted = dynamic_pointer_cast<ParentNode>(node);
-				i += goThroughTheTree(parentCasted.get());
-			}
-			else { // Is leaf
-				auto leafCasted = dynamic_pointer_cast<LeafNode>(node);
-			}
-
+	for (auto& node : *nodes) {
+		for (auto& attr : node->getAttributes()) {
 			i++;
 		}
 
-		return i;
+		if (node->getIsParent()) {
+			auto parentCasted = dynamic_pointer_cast<ParentNode>(node);
+			i += goThroughTheTree(parentCasted.get());
+		}
+		else { // Is leaf
+			auto leafCasted = dynamic_pointer_cast<LeafNode>(node);
+		}
+
+		i++;
 	}
+	return i;
+}
 
 	void XmlReader::processStateTagName(State& state, string& currentTagName) {
 		if (!(isalpha(_currentChar) || _currentChar == '_' || _currentChar == ':' || _currentChar == '.'))
@@ -261,8 +259,11 @@ namespace Xml {
 	}
 
 	string XmlReader::generateXmlString() {
+		elapsed();
 		ostringstream os;
-		return generateXmlString(os, this, 0);
+		auto x = generateXmlString(os, this, 0);
+		cout << "Generowanie czas: " << elapsed() / 1000.0 << " ms";
+		return x;
 	}
 
 	string XmlReader::generateXmlString(ostringstream& os, XmlContainer* nodes, int nestLvl) const {

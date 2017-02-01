@@ -36,7 +36,7 @@ namespace Xml {
 		auto elapsed() {
 			static date_time prev;
 			auto now = sys_clock::now();
-			auto result = chrono::duration_cast<chrono::milliseconds>(now - prev).count();
+			auto result = chrono::duration_cast<chrono::microseconds>(now - prev).count();
 			prev = now;
 			return result;
 		}
