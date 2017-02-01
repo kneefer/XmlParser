@@ -165,7 +165,7 @@ void main() {
 	XmlReader xmlReader;
 
 	try {
-		cout << "Duration: " << xmlReader.runParsing("Test_big.xml") << " ms" << endl;
+		cout << "Duration: " << xmlReader.runParsing("Test.xml") << " ms" << endl;
 		cout << "Time: " << xmlReader.testGoThroughTheTree() << " ms" << endl << endl;
 	} catch(string message) {
 		cout << "Problem while parsing XML: Error: " << message;
